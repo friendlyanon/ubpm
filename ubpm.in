@@ -1,0 +1,14 @@
+#!@UBPM_BASH_SHEBANG@
+
+SOURCE="${BASH_SOURCE[0]}"
+while [ -h "$SOURCE" ]; do
+  DIR="$(cd -P "$(dirname "$SOURCE")" >/dev/null 2>&1 && pwd)"
+  SOURCE="$(readlink "$SOURCE")"
+  [[ $SOURCE != /* ]] && SOURCE="$DIR/$SOURCE"
+done
+DIR="$(cd -P "$(dirname "$SOURCE")" >/dev/null 2>&1 && pwd)"
+
+MODULE_DIR="$(cd "$DIR/@UBPM_BIN_MODULE_PATH@"; pwd -P)"
+MODULE_PATH="$MODULE_DIR/ubpm.cmake"
+
+printf "%s\n" "$MODULE_PATH"
