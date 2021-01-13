@@ -5,10 +5,11 @@ project(
     VERSION 1.0.0
     DESCRIPTION "CMake only dependency management nonintrusively"
     HOMEPAGE_URL "https://github.com/friendlyanon/ubpm"
-    # Have to enable at least one language to make the lib dir available
-    LANGUAGES C
+    LANGUAGES NONE
 )
 
+# Define lib dir here, so we don't have to enable any languages
+set(CMAKE_INSTALL_LIBDIR lib CACHE PATH "Object code libraries (lib)")
 include(GNUInstallDirs)
 
 set(
