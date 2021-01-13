@@ -11,6 +11,11 @@ DIR="$(cd -P "$(dirname "${SOURCE}")" >/dev/null 2>&1 && pwd)"
 MODULE_DIR="$(cd "${DIR}/@UBPM_BIN_MODULE_PATH@"; pwd -P)"
 MODULE_PATH="${MODULE_DIR}/ubpm.cmake"
 
+if [ ! -f "${MODULE_PATH}" ]; then
+  printf "No such file:\n%s\n" "${MODULE_PATH}" >&2
+  exit 1
+fi
+
 if [ "${UBPM_MODULE_PATH}" != "${MODULE_PATH}" ]; then
   echo "/!\\ The UBPM_MODULE_PATH env variable is not set to ubpm.cmake"
   echo "/!\\ Please set it to the following path:"
