@@ -1,0 +1,23 @@
+name: UBPM - CMake dependency management
+
+description: Makes the UBPM dependency manager available
+
+author: friendlyanon
+
+branding:
+  icon: box
+  color: blue
+
+inputs:
+  destination:
+    description: Destination directory, ubpm.cmake will be copied into it
+    default: .ubpm_root
+    required: false
+
+outputs:
+  location:
+    description: Path to the ubpm.cmake file
+
+runs:
+  using: node12
+  main: main.js
