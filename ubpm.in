@@ -10,16 +10,33 @@ DIR="$(cd -P "$(dirname "${SOURCE}")" >/dev/null 2>&1 && pwd)"
 
 MODULE_DIR="$(cd "${DIR}/@UBPM_BIN_MODULE_PATH@"; pwd -P)"
 MODULE_PATH="${MODULE_DIR}/ubpm.cmake"
+VERSION="@PROJECT_VERSION@"
 
 if [ ! -f "${MODULE_PATH}" ]; then
   printf "No such file:\n%s\n" "${MODULE_PATH}" >&2
   exit 1
 fi
 
+PATH_NOT_SET=""
 if [ "${UBPM_MODULE_PATH}" != "${MODULE_PATH}" ]; then
-  echo "/!\\ The UBPM_MODULE_PATH env variable is not set to ubpm.cmake"
-  echo "/!\\ Please set it to the following path:"
-  printf "%s\n\n" "$MODULE_PATH"
+  PATH_NOT_SET="1"
 fi
 
-printf "%s\n" "${MODULE_PATH}"
+path_warn() {
+  [ -n "${PATH_NOT_SET}" ] && cat << EOF
+
+/!\\ UBPM_MODULE_PATH env variable is not set to ubpm.cmake
+EOF
+}
+
+usage() {
+  cat << EOF
+UBPM - CMake only dependency management nonintrusively
+Version: ${VERSION}
+Module path: ${MODULE_PATH}
+EOF
+  path_warn
+  exit 0
+}
+
+usage
