@@ -449,7 +449,13 @@ function(ubpm_dependency NAME)
     string(SHA1 source_hash "${source_hashable}")
   endif()
 
-  set(install_hashable "${source_hash}" "${_BUILD_TYPE}" "${_OPTIONS}")
+  set(
+      install_hashable
+      "${source_hash}"
+      "${_COMPONENTS}"
+      "${_BUILD_TYPE}"
+      "${_UNPARSED_ARGUMENTS}" # OPTIONS
+  )
   string(SHA1 install_hash "${install_hashable}")
 
   set(type_path optimized)
