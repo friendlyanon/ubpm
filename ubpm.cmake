@@ -91,7 +91,7 @@ if(DEFINED CACHE{CMAKE_BUILD_TYPE})
 endif()
 
 macro(ubpm_msg TYPE MESSAGE)
-  if(TYPE STREQUAL "FATAL_ERROR")
+  if("${TYPE}" STREQUAL "FATAL_ERROR")
     message(FATAL_ERROR "${MESSAGE}")
   else()
     if(UBPM_USE_ANSI_COLOR)
