@@ -68,17 +68,38 @@ if(NOT DEFINED CACHE{UBPM_PREFIX_PATH_INIT})
   set(UBPM_PREFIX_PATH_INIT "$CACHE{CMAKE_PREFIX_PATH}" CACHE INTERNAL "")
 endif()
 
+macro(ubpm_msg_color TYPE PREFIX MESSAGE)
+  string(ASCII 27 esc)
+  message(
+      "${TYPE}"
+      "${PREFIX}${esc}[${UBPM_LOG_COLOR}m${MESSAGE}${esc}[0m"
+  )
+  unset(esc)
+endmacro()
+
+if(DEFINED CACHE{CMAKE_BUILD_TYPE})
+  # Make sure this variable never warns for multi-config generators
+  set(CMAKE_BUILD_TYPE "$CACHE{CMAKE_BUILD_TYPE}" CACHE STRING "" FORCE)
+  # Print only from the top level project
+  if(NOT "$CACHE{UBPM_IS_DEPENDENCY}")
+    ubpm_msg_color(
+        STATUS
+        ""
+        "UBPM: Default build mode is $CACHE{CMAKE_BUILD_TYPE}"
+    )
+  endif()
+endif()
+
 macro(ubpm_msg TYPE MESSAGE)
   if(TYPE STREQUAL "FATAL_ERROR")
     message(FATAL_ERROR "${MESSAGE}")
   else()
     if(UBPM_USE_ANSI_COLOR)
-      string(ASCII 27 esc)
-      message(
+      ubpm_msg_color(
           "${TYPE}"
-          "${UBPM_INDENT}${esc}[${UBPM_LOG_COLOR}mUBPM [${NAME}]: ${MESSAGE}${esc}[0m"
+          "${UBPM_INDENT}"
+          "UBPM [${NAME}]: ${MESSAGE}"
       )
-      unset(esc)
     else()
       message("${TYPE}" "${UBPM_INDENT}UBPM [${NAME}]: ${MESSAGE}")
     endif()
@@ -114,14 +135,14 @@ function(ubpm_cmake)
   ubpm_call("${CMAKE_COMMAND}" ${ARGV})
 endfunction()
 
-macro(ubpm_escape_arg)
-
-endmacro()
-
 macro(ubpm_install_source_dir)
   ubpm_msg(STATUS "Configuring")
 
-  set(config_args -D "UBPM_INDENT:INTERNAL=  $CACHE{UBPM_INDENT}")
+  set(
+      config_args
+      -D "UBPM_INDENT:INTERNAL=  $CACHE{UBPM_INDENT}"
+      -D "UBPM_IS_DEPENDENCY:INTERNAL=YES"
+  )
   foreach(var IN LISTS UBPM_PASSTHROUGH_CACHE)
     if(DEFINED "CACHE{${var}}")
       string(REPLACE ";" [[\\\;]] escaped "$CACHE{${var}}")
