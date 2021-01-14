@@ -457,8 +457,8 @@ function(ubpm_dependency NAME)
     set(type_path debug)
   endif()
 
-  set(install_dir "${UBPM_PATH}/install/${type_path}/${NAME}")
-  set(install_hash_path "${install_dir}/.${install_hash}")
+  set(install_dir "${UBPM_PATH}/install/${type_path}")
+  set(install_hash_path "${install_dir}/.${NAME}-${install_hash}")
   if(EXISTS "${install_hash_path}")
     ubpm_msg(STATUS "From install cache")
   else()
@@ -466,7 +466,6 @@ function(ubpm_dependency NAME)
       ubpm_msg(STATUS "From source cache")
     endif()
 
-    set(install_dir "${install_dir}/${install_hash}")
     ubpm_dispatch()
   endif()
 
