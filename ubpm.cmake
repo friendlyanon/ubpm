@@ -192,6 +192,7 @@ macro(ubpm_install_source_dir)
   endif()
 
   set(rpath $ORIGIN)
+  # FIXME: no mac to test this on. Is this correct?
   if(APPLE)
     set(rpath @loader_path)
   endif()
