@@ -205,12 +205,24 @@ macro(ubpm_install_source_dir)
 
   ubpm_msg(STATUS "Installing")
   file(REMOVE_RECURSE "${install_dir}")
-  ubpm_cmake(
-      --install "${build_dir}"
-      --config "${_BUILD_TYPE}"
-      --prefix "${install_dir}"
-      OUTPUT_QUIET
-  )
+  if("${_COMPONENTS}" STREQUAL "")
+    ubpm_cmake(
+        --install "${build_dir}"
+        --config "${_BUILD_TYPE}"
+        --prefix "${install_dir}"
+        OUTPUT_QUIET
+    )
+  else()
+    foreach(component IN LISTS _COMPONENTS)
+      ubpm_cmake(
+          --install "${build_dir}"
+          --config "${_BUILD_TYPE}"
+          --prefix "${install_dir}"
+          --component "${component}"
+          OUTPUT_QUIET
+      )
+    endforeach()
+  endif()
 
   file(WRITE "${UBPM_PATH}/prefix/${NAME}-${install_hash}" "${install_dir}")
 
@@ -339,7 +351,7 @@ function(ubpm_dependency NAME)
   endif()
 
   set(oneValueArgs SOURCE_DIR URL URL_HASH BUILD_TYPE PATH SCRIPT_PATH)
-  set(multiValueArgs GITHUB GIT)
+  set(multiValueArgs GITHUB GIT COMPONENTS)
   cmake_parse_arguments(PARSE_ARGV 1 "" "OPTIONS" "${oneValueArgs}" "${multiValueArgs}")
 
   if(_OPTIONS)
