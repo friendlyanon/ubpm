@@ -191,6 +191,12 @@ macro(ubpm_install_source_dir)
     endif()
   endif()
 
+  set(rpath $ORIGIN)
+  if(APPLE)
+    set(rpath @loader_path)
+  endif()
+  list(APPEND cmake_args -D "CMAKE_INSTALL_RPATH=${rpath}")
+
   set(build_dir "${UBPM_PATH}/build")
   file(REMOVE_RECURSE "${build_dir}")
 
