@@ -135,6 +135,15 @@ function(ubpm_cmake)
   ubpm_call("${CMAKE_COMMAND}" ${ARGV})
 endfunction()
 
+macro(ubpm_read_install_manifest)
+  file(STRINGS "${build_dir}/install_manifest.txt" current_manifest)
+  foreach(item IN LISTS current_manifest)
+    list(APPEND manifest "${item}")
+  endforeach()
+  unset(item)
+  unset(current_manifest)
+endmacro()
+
 macro(ubpm_install_source_dir)
   ubpm_msg(STATUS "Configuring")
 
@@ -205,6 +214,7 @@ macro(ubpm_install_source_dir)
 
   ubpm_msg(STATUS "Installing")
   file(REMOVE_RECURSE "${install_dir}")
+  set(manifest "")
   if("${_COMPONENTS}" STREQUAL "")
     ubpm_cmake(
         --install "${build_dir}"
@@ -212,6 +222,7 @@ macro(ubpm_install_source_dir)
         --prefix "${install_dir}"
         OUTPUT_QUIET
     )
+    ubpm_read_install_manifest()
   else()
     foreach(component IN LISTS _COMPONENTS)
       ubpm_cmake(
@@ -221,13 +232,16 @@ macro(ubpm_install_source_dir)
           --component "${component}"
           OUTPUT_QUIET
       )
+      ubpm_read_install_manifest()
     endforeach()
   endif()
 
   file(WRITE "${UBPM_PATH}/prefix/${type_path}/${NAME}-${install_hash}" "${install_dir}")
+  list(REMOVE_DUPLICATES manifest)
+  list(JOIN manifest "\n" manifest)
 
   file(REMOVE_RECURSE "${build_dir}")
-  file(WRITE "${install_hash_path}" "${install_hashable}")
+  file(WRITE "${install_hash_path}" "${install_hashable}\n\n${manifest}")
   ubpm_msg(STATUS "Installed")
 endmacro()
 
