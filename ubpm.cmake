@@ -67,7 +67,7 @@ macro(ubpm_msg_color TYPE PREFIX MESSAGE)
   string(ASCII 27 esc)
   message(
       "${TYPE}"
-      "${PREFIX}${esc}[${UBPM_LOG_COLOR}m${MESSAGE}${esc}[0m"
+      "${PREFIX}${esc}[$CACHE{UBPM_LOG_COLOR}m${MESSAGE}${esc}[0m"
   )
   unset(esc)
 endmacro()
@@ -89,27 +89,29 @@ macro(ubpm_msg TYPE MESSAGE)
   if("${TYPE}" STREQUAL "FATAL_ERROR")
     message(FATAL_ERROR "${MESSAGE}")
   else()
-    if(UBPM_USE_ANSI_COLOR)
+    if("$CACHE{UBPM_USE_ANSI_COLOR}")
       ubpm_msg_color(
           "${TYPE}"
-          "${UBPM_INDENT}"
+          "$CACHE{UBPM_INDENT}"
           "UBPM [${NAME}]: ${MESSAGE}"
       )
     else()
-      message("${TYPE}" "${UBPM_INDENT}UBPM [${NAME}]: ${MESSAGE}")
+      message("${TYPE}" "$CACHE{UBPM_INDENT}UBPM [${NAME}]: ${MESSAGE}")
     endif()
   endif()
 endmacro()
 
-if(NOT DEFINED UBPM_PATH_INIT)
-  get_filename_component(UBPM_PATH "${CMAKE_SOURCE_DIR}/.ubpm" REALPATH CACHE)
-else()
-  get_filename_component(UBPM_PATH "${UBPM_PATH_INIT}" REALPATH CACHE)
+if(NOT DEFINED CACHE{UBPM_PATH})
+  if(NOT DEFINED UBPM_PATH_INIT)
+    get_filename_component(UBPM_PATH "${CMAKE_SOURCE_DIR}/.ubpm" REALPATH CACHE)
+  else()
+    get_filename_component(UBPM_PATH "${UBPM_PATH_INIT}" REALPATH CACHE)
+  endif()
+  set(UBPM_PATH "$CACHE{UBPM_PATH}" CACHE INTERNAL "")
 endif()
-mark_as_advanced(UBPM_PATH)
 
-if(NOT IS_ABSOLUTE "${UBPM_PATH}")
-  message(FATAL_ERROR "UBPM_PATH is not an absolute path: ${UBPM_PATH}")
+if(NOT IS_ABSOLUTE "$CACHE{UBPM_PATH}")
+  message(FATAL_ERROR "UBPM_PATH is not an absolute path: $CACHE{UBPM_PATH}")
 endif()
 
 if(NOT "$CACHE{UBPM_NO_GIT}" AND NOT DEFINED CACHE{UBPM_GIT_EXECUTABLE})
@@ -197,7 +199,7 @@ macro(ubpm_install_source_dir)
   endif()
   list(APPEND cmake_args -D "CMAKE_INSTALL_RPATH=${rpath}")
 
-  set(build_dir "${UBPM_PATH}/build")
+  set(build_dir "$CACHE{UBPM_PATH}/build")
   file(REMOVE_RECURSE "${build_dir}")
 
   ubpm_cmake(
@@ -208,12 +210,12 @@ macro(ubpm_install_source_dir)
   )
 
   ubpm_msg(STATUS "Building")
-  set(build_log "${UBPM_PATH}/build.log")
+  set(build_log "$CACHE{UBPM_PATH}/build.log")
   file(REMOVE "${build_log}")
   ubpm_cmake(
       --build "${build_dir}"
       --config "${_BUILD_TYPE}"
-      -j "${UBPM_CORES}"
+      -j "$CACHE{UBPM_CORES}"
       OUTPUT_FILE "${build_log}" ERROR_FILE "${build_log}"
   )
   file(REMOVE "${build_log}")
@@ -259,9 +261,9 @@ macro(ubpm_install_git)
 
   file(REMOVE_RECURSE "${source_dir}")
   list(POP_FRONT _GIT repo branch commit)
-  ubpm_call("${UBPM_GIT_EXECUTABLE}" clone "${repo}" "${source_dir}" -b "${branch}" --single-branch --quiet ERROR_QUIET)
+  ubpm_call("$CACHE{UBPM_GIT_EXECUTABLE}" clone "${repo}" "${source_dir}" -b "${branch}" --single-branch --quiet ERROR_QUIET)
   if(commit)
-    ubpm_call("${UBPM_GIT_EXECUTABLE}" checkout "${commit}" -q WORKING_DIRECTORY "${source_dir}")
+    ubpm_call("$CACHE{UBPM_GIT_EXECUTABLE}" checkout "${commit}" -q WORKING_DIRECTORY "${source_dir}")
   endif()
   file(REMOVE_RECURSE "${source_dir}/.git")
 
@@ -290,7 +292,7 @@ endmacro()
 
 macro(ubpm_install_url)
   ubpm_determine_hash_method()
-  set(dl_path "${UBPM_PATH}/download")
+  set(dl_path "$CACHE{UBPM_PATH}/download")
   file(REMOVE_RECURSE "${dl_path}")
   file(MAKE_DIRECTORY "${dl_path}")
 
@@ -312,7 +314,7 @@ macro(ubpm_install_url)
     ubpm_msg(FATAL_ERROR "Hash mismatch")
   endif()
 
-  set(extract_path "${UBPM_PATH}/extract")
+  set(extract_path "$CACHE{UBPM_PATH}/extract")
   file(REMOVE_RECURSE "${extract_path}")
   file(MAKE_DIRECTORY "${extract_path}")
   ubpm_cmake(-E tar xf "${archive_path}" WORKING_DIRECTORY "${extract_path}")
@@ -408,7 +410,7 @@ function(ubpm_dependency NAME)
     set(source_hashable "${source_dir}")
     set(KIND source)
   else()
-    set(source_dir "${UBPM_PATH}/source/${NAME}")
+    set(source_dir "$CACHE{UBPM_PATH}/source/${NAME}")
   endif()
 
   if(_GITHUB)
@@ -469,7 +471,7 @@ function(ubpm_dependency NAME)
     set(type_path debug)
   endif()
 
-  set(install_dir "${UBPM_PATH}/install/${type_path}")
+  set(install_dir "$CACHE{UBPM_PATH}/install/${type_path}")
   set(install_hash_path "${install_dir}/.${NAME}-${install_hash}")
   if(EXISTS "${install_hash_path}")
     ubpm_msg(STATUS "From install cache")
