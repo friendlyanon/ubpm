@@ -75,12 +75,21 @@ endmacro()
 if(DEFINED CACHE{CMAKE_BUILD_TYPE})
   # Make sure this variable never warns for multi-config generators
   set(CMAKE_BUILD_TYPE "$CACHE{CMAKE_BUILD_TYPE}" CACHE STRING "" FORCE)
-  # Print only from the top level project
   if(NOT "$CACHE{UBPM_IS_DEPENDENCY}")
     ubpm_msg_color(
         STATUS
         ""
         "UBPM: Default build mode is $CACHE{CMAKE_BUILD_TYPE}"
+    )
+  endif()
+else()
+  # Use a sensible default
+  set(CMAKE_BUILD_TYPE Release CACHE STRING "")
+  if(NOT "$CACHE{UBPM_IS_DEPENDENCY}")
+    ubpm_msg_color(
+        STATUS
+        ""
+        "UBPM: Default build mode is $CACHE{CMAKE_BUILD_TYPE} (set automatically)"
     )
   endif()
 endif()
