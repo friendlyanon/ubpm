@@ -27,7 +27,6 @@ set(
     UBPM_USE_ANSI_COLOR
     UBPM_LOG_COLOR
     UBPM_PASSTHROUGH_CACHE
-    UBPM_PREFIX_PATH_INIT
     CACHE
     INTERNAL
     ""
@@ -63,10 +62,6 @@ string(
 set(UBPM_PASSTHROUGH_CACHE "CMAKE_TOOLCHAIN_FILE" CACHE STRING "${ubpm_doc}")
 mark_as_advanced(UBPM_PASSTHROUGH_CACHE)
 unset(ubpm_doc)
-
-if(NOT DEFINED CACHE{UBPM_PREFIX_PATH_INIT})
-  set(UBPM_PREFIX_PATH_INIT "$CACHE{CMAKE_PREFIX_PATH}" CACHE INTERNAL "")
-endif()
 
 macro(ubpm_msg_color TYPE PREFIX MESSAGE)
   string(ASCII 27 esc)
@@ -177,7 +172,11 @@ macro(ubpm_install_source_dir)
     file(INSTALL "${_SCRIPT_PATH}" DESTINATION "${source_dir}" RENAME CMakeLists.txt MESSAGE_NEVER)
   endif()
 
-  set(cmake_args -D "CMAKE_BUILD_TYPE=${_BUILD_TYPE}")
+  set(
+      cmake_args
+      -D "CMAKE_BUILD_TYPE=${_BUILD_TYPE}"
+      -D "CMAKE_INSTALL_PREFIX=${install_dir}"
+  )
   if(CMAKE_GENERATOR)
     list(APPEND cmake_args -G "${CMAKE_GENERATOR}")
     if(CMAKE_GENERATOR_PLATFORM)
@@ -220,13 +219,11 @@ macro(ubpm_install_source_dir)
   file(REMOVE "${build_log}")
 
   ubpm_msg(STATUS "Installing")
-  file(REMOVE_RECURSE "${install_dir}")
   set(manifest "")
   if("${_COMPONENTS}" STREQUAL "")
     ubpm_cmake(
         --install "${build_dir}"
         --config "${_BUILD_TYPE}"
-        --prefix "${install_dir}"
         OUTPUT_QUIET
     )
     ubpm_read_install_manifest()
@@ -235,7 +232,6 @@ macro(ubpm_install_source_dir)
       ubpm_cmake(
           --install "${build_dir}"
           --config "${_BUILD_TYPE}"
-          --prefix "${install_dir}"
           --component "${component}"
           OUTPUT_QUIET
       )
@@ -243,7 +239,6 @@ macro(ubpm_install_source_dir)
     endforeach()
   endif()
 
-  file(WRITE "${UBPM_PATH}/prefix/${type_path}/${NAME}-${install_hash}" "${install_dir}")
   list(REMOVE_DUPLICATES manifest)
   list(JOIN manifest "\n" manifest)
 
@@ -355,16 +350,6 @@ macro(ubpm_dispatch)
     ubpm_install_url()
   endif()
 endmacro()
-
-function(ubpm_gather_prefixes TYPE OUT)
-  file(GLOB prefixes LIST_DIRECTORIES NO "${UBPM_PATH}/prefix/${TYPE}/*")
-  set(result "")
-  foreach(file IN LISTS prefixes)
-    file(READ "${file}" prefix)
-    list(APPEND result "${prefix}")
-  endforeach()
-  set("${OUT}" "${result}" PARENT_SCOPE)
-endfunction()
 
 function(ubpm_dependency NAME)
   if(NAME STREQUAL "")
@@ -488,17 +473,22 @@ function(ubpm_dependency NAME)
   set(install_hash_path "${install_dir}/.${NAME}-${install_hash}")
   if(EXISTS "${install_hash_path}")
     ubpm_msg(STATUS "From install cache")
-  else()
-    if(NOT _SOURCE_DIR AND KIND STREQUAL "source")
-      ubpm_msg(STATUS "From source cache")
+    return()
+  endif()
+
+  if(NOT _SOURCE_DIR AND KIND STREQUAL "source")
+    ubpm_msg(STATUS "From source cache")
+  endif()
+
+  ubpm_dispatch()
+
+  get_property(prefixes GLOBAL PROPERTY UBPM_ADDED_PREFIXES)
+  if(NOT type_path IN_LIST prefixes)
+    if(NOT "$CACHE{CMAKE_PREFIX_PATH}" STREQUAL "")
+      set(CMAKE_PREFIX_PATH "$CACHE{CMAKE_PREFIX_PATH}" "${install_dir}" CACHE STRING "" FORCE)
+    else()
+      set(CMAKE_PREFIX_PATH "${install_dir}" CACHE STRING "" FORCE)
     endif()
-
-    ubpm_dispatch()
+    set_property(GLOBAL APPEND PROPERTY UBPM_ADDED_PREFIXES "${type_path}")
   endif()
-
-  ubpm_gather_prefixes("${type_path}" prefixes)
-  if(NOT "$CACHE{UBPM_PREFIX_PATH_INIT}" STREQUAL "")
-    list(PREPEND prefixes "$CACHE{UBPM_PREFIX_PATH_INIT}")
-  endif()
-  set(CMAKE_PREFIX_PATH "${prefixes}" CACHE STRING "" FORCE)
 endfunction()
