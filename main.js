@@ -24,6 +24,9 @@ try {
   fs.mkdirSync(locationParent, { recursive: true });
   fs.copyFileSync(fromLocation, location);
 
+  const envFile = path.normalize(process.env.GITHUB_ENV);
+  fs.appendFileSync(envFile, `UBPM_MODULE_PATH=${location}${EOL}`);
+
   const value = location.replace(regex, replacer);
   process.stdout.write(`::set-output name=location::${value}${EOL}`);
 } catch (error) {
