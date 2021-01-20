@@ -59,12 +59,15 @@ else()
   include(dependencies.cmake)
 endif()
 EOF
+  echo "PreLoad.cmake written"
   if [ ! -f "dependencies.cmake" ]; then
     cat - > dependencies.cmake << EOF
 # Declare your dependencies here using the ubpm_dependency() command
 # For more information check https://github.com/friendlyanon/ubpm
 EOF
+    echo "dependencies.cmake written"
   fi
+  printf "\nProject initialized\n"
   exit 0
 }
 
