@@ -29,7 +29,7 @@ file(
     "/${UBPM_LIBROOT}" "/${UBPM_DATAROOT}"
 )
 
-configure_file(ubpm.in ubpm @ONLY)
+configure_file(ubpm.sh.in ubpm @ONLY)
 configure_file(cmake/ubpmConfig.cmake.in ubpmConfig.cmake @ONLY)
 configure_file(cmake/ubpmConfigVersion.cmake.in ubpmConfigVersion.cmake @ONLY)
 
