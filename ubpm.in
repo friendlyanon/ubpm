@@ -34,9 +34,54 @@ usage() {
 UBPM - CMake only dependency management nonintrusively
 Version: ${VERSION}
 Module path: ${MODULE_PATH}
+
+Usage: ubpm [COMMAND]
+
+Commands:
+  init        Creates the PreLoad.cmake and dependencies.cmake files for
+              declaring dependencies used by the current CMake project
 EOF
   path_warn
   exit 0
 }
 
-usage
+if [ \( "${#}" -eq 0 \) -o \( ! -f "CMakeLists.txt" \) ]; then
+  usage
+fi
+
+init() {
+  cat - > PreLoad.cmake <<'EOF'
+include("$ENV{UBPM_MODULE_PATH}" OPTIONAL RESULT_VARIABLE ubpm_available)
+
+if(NOT ubpm_available)
+  message(AUTHOR_WARNING "UBPM could not be included")
+else()
+  include(dependencies.cmake)
+endif()
+EOF
+  if [ ! -f "dependencies.cmake" ]; then
+    cat - > dependencies.cmake << EOF
+# Declare your dependencies here using the ubpm_dependency() command
+# For more information check https://github.com/friendlyanon/ubpm
+EOF
+  fi
+  exit 0
+}
+
+while [ "${#}" -gt 0 ]; do
+  key="${1}"
+
+  case "${key}" in
+    -?|/?|-h|/h|--help|/help)
+      usage
+      ;;
+
+    init)
+      init
+      ;;
+
+    *)
+      printf "Unknown option: %s\n" "${key}"
+      ;;
+  esac
+done
