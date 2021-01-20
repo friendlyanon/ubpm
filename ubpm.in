@@ -34,6 +34,9 @@ usage() {
 UBPM - CMake only dependency management nonintrusively
 Version: ${VERSION}
 Module path: ${MODULE_PATH}
+EOF
+  path_warn
+  cat << EOF
 
 Usage: ubpm [COMMAND]
 
@@ -50,7 +53,7 @@ if [ \( "${#}" -eq 0 \) -o \( ! -f "CMakeLists.txt" \) ]; then
 fi
 
 init() {
-  cat - > PreLoad.cmake <<'EOF'
+  cat > PreLoad.cmake <<'EOF'
 include("$ENV{UBPM_MODULE_PATH}" OPTIONAL RESULT_VARIABLE ubpm_available)
 
 if(NOT ubpm_available)
@@ -61,7 +64,7 @@ endif()
 EOF
   echo "PreLoad.cmake written"
   if [ ! -f "dependencies.cmake" ]; then
-    cat - > dependencies.cmake << EOF
+    cat > dependencies.cmake << EOF
 # Declare your dependencies here using the ubpm_dependency() command
 # For more information check https://github.com/friendlyanon/ubpm
 EOF
