@@ -18,20 +18,6 @@
 
 cmake_minimum_required(VERSION 3.15)
 
-set(
-    UBPM_INTERNAL_PASSTHROUGH
-    UBPM_NO_GIT
-    UBPM_GIT_EXECUTABLE
-    UBPM_PATH
-    UBPM_CORES
-    UBPM_USE_ANSI_COLOR
-    UBPM_LOG_COLOR
-    UBPM_PASSTHROUGH_CACHE
-    CACHE
-    INTERNAL
-    ""
-)
-
 if(NOT DEFINED CACHE{UBPM_CORES})
   include(ProcessorCount)
   ProcessorCount(UBPM_CORES)
@@ -44,13 +30,8 @@ if(NOT DEFINED CACHE{UBPM_CORES})
   mark_as_advanced(UBPM_CORES)
 endif()
 
-set(UBPM_INDENT "$CACHE{UBPM_INDENT}" CACHE INTERNAL "Indentation level")
-
 set(UBPM_USE_ANSI_COLOR YES CACHE BOOL "Whether to use ANSI terminal colors")
-mark_as_advanced(UBPM_USE_ANSI_COLOR)
-
 set(UBPM_LOG_COLOR 96 CACHE STRING "ANSI color to use in the terminal")
-mark_as_advanced(UBPM_LOG_COLOR)
 
 string(
     CONCAT ubpm_doc
@@ -60,8 +41,9 @@ string(
     "clearing the artifact cache directory first."
 )
 set(UBPM_PASSTHROUGH_CACHE "CMAKE_TOOLCHAIN_FILE" CACHE STRING "${ubpm_doc}")
-mark_as_advanced(UBPM_PASSTHROUGH_CACHE)
 unset(ubpm_doc)
+
+mark_as_advanced(UBPM_PASSTHROUGH_CACHE UBPM_LOG_COLOR UBPM_USE_ANSI_COLOR)
 
 macro(ubpm_msg_color TYPE PREFIX MESSAGE)
   string(ASCII 27 esc)
@@ -72,16 +54,12 @@ macro(ubpm_msg_color TYPE PREFIX MESSAGE)
   unset(esc)
 endmacro()
 
-if(DEFINED CACHE{CMAKE_BUILD_TYPE})
-  # Make sure this variable never warns for multi-config generators
-  set(CMAKE_BUILD_TYPE "$CACHE{CMAKE_BUILD_TYPE}" CACHE STRING "" FORCE)
-  if(NOT "$CACHE{UBPM_IS_DEPENDENCY}")
-    ubpm_msg_color(
-        STATUS
-        ""
-        "UBPM: Default build mode is $CACHE{CMAKE_BUILD_TYPE}"
-    )
-  endif()
+if(DEFINED CACHE{CMAKE_BUILD_TYPE} AND NOT "$CACHE{UBPM_IS_DEPENDENCY}")
+  ubpm_msg_color(
+      STATUS
+      ""
+      "UBPM: Default build mode is $CACHE{CMAKE_BUILD_TYPE}"
+  )
 else()
   # Use a sensible default
   set(CMAKE_BUILD_TYPE Release CACHE STRING "")
@@ -150,31 +128,43 @@ macro(ubpm_read_install_manifest)
   unset(current_manifest)
 endmacro()
 
+macro(ubpm_add_cache var val)
+  string(REPLACE "\"" "\\\"" escaped "${val}")
+  string(APPEND cache_string "set(\"${var}\" \"${escaped}\" CACHE INTERNAL \"\")\n")
+endmacro()
+
 macro(ubpm_install_source_dir)
   ubpm_msg(STATUS "Configuring")
 
-  set(
-      config_args
-      -D "UBPM_INDENT:INTERNAL=  $CACHE{UBPM_INDENT}"
-      -D "UBPM_IS_DEPENDENCY:INTERNAL=YES"
-  )
+  set(internal_vars "NO_GIT;GIT_EXECUTABLE;PATH;CORES;USE_ANSI_COLOR;LOG_COLOR;PASSTHROUGH_CACHE")
+
+  set(cache_string "")
+  ubpm_add_cache(CMAKE_BUILD_TYPE "${_BUILD_TYPE}")
+  ubpm_add_cache(CMAKE_INSTALL_PREFIX "${install_dir}")
+  ubpm_add_cache(UBPM_INDENT "  $CACHE{UBPM_INDENT}")
+  ubpm_add_cache(UBPM_IS_DEPENDENCY YES)
+  ubpm_add_cache(UBPM_NO_SCRIPT_WARNING YES)
+
   foreach(var IN LISTS UBPM_PASSTHROUGH_CACHE)
     if(DEFINED "CACHE{${var}}")
-      string(REPLACE ";" [[\\\;]] escaped "$CACHE{${var}}")
-      list(APPEND config_args -D "${var}:INTERNAL=${escaped}")
+      ubpm_add_cache("${var}" "$CACHE{${var}}")
     endif()
   endforeach()
 
-  list(APPEND config_args -D UBPM_NO_SCRIPT_WARNING:INTERNAL=YES)
-  foreach(var IN LISTS UBPM_INTERNAL_PASSTHROUGH)
-    string(REPLACE ";" [[\\\;]] escaped "$CACHE{${var}}")
-    list(APPEND config_args -D "${var}:INTERNAL=${escaped}")
+  foreach(var IN LISTS internal_vars)
+    ubpm_add_cache("UBPM_${var}" "$CACHE{UBPM_${var}}")
   endforeach()
 
   if(_OPTIONS)
     foreach(index RANGE "${options_limit}")
-      string(REPLACE ";" [[\\\;]] escaped "${options_${index}}")
-      list(APPEND config_args -D "${escaped}")
+      if("${options_${index}}" MATCHES "([^=]+)=(.+)")
+        ubpm_add_cache("${CMAKE_MATCH_0}" "${CMAKE_MATCH_1}")
+      else()
+        ubpm_msg(
+            FATAL_ERROR
+            "Option argument doesn't match var=val format:\n${options_${index}}"
+        )
+      endif()
     endforeach()
   endif()
 
@@ -183,11 +173,7 @@ macro(ubpm_install_source_dir)
     file(INSTALL "${_SCRIPT_PATH}" DESTINATION "${source_dir}" RENAME CMakeLists.txt MESSAGE_NEVER)
   endif()
 
-  set(
-      cmake_args
-      -D "CMAKE_BUILD_TYPE=${_BUILD_TYPE}"
-      -D "CMAKE_INSTALL_PREFIX=${install_dir}"
-  )
+  set(cmake_args "")
   if(CMAKE_GENERATOR)
     list(APPEND cmake_args -G "${CMAKE_GENERATOR}")
     if(CMAKE_GENERATOR_PLATFORM)
@@ -197,7 +183,7 @@ macro(ubpm_install_source_dir)
       list(APPEND cmake_args -T "${CMAKE_GENERATOR_TOOLSET}")
     endif()
     if(CMAKE_MAKE_PROGRAM)
-      list(APPEND cmake_args -D "CMAKE_MAKE_PROGRAM:FILEPATH=${CMAKE_MAKE_PROGRAM}")
+      ubpm_add_cache(CMAKE_MAKE_PROGRAM "${CMAKE_MAKE_PROGRAM}")
     endif()
   endif()
 
@@ -206,7 +192,11 @@ macro(ubpm_install_source_dir)
   if(APPLE)
     set(rpath @loader_path)
   endif()
-  list(APPEND cmake_args -D "CMAKE_INSTALL_RPATH=${rpath}")
+  ubpm_add_cache(CMAKE_INSTALL_RPATH "${rpath}")
+
+  set(cache_path "$CACHE{UBPM_PATH}/cache.cmake")
+  file(REMOVE "${cache_path}")
+  file(WRITE "${cache_path}" "${cache_string}")
 
   set(build_dir "$CACHE{UBPM_PATH}/build")
   file(REMOVE_RECURSE "${build_dir}")
@@ -214,9 +204,11 @@ macro(ubpm_install_source_dir)
   ubpm_cmake(
       -S "${source_dir}"
       -B "${build_dir}"
-      --no-warn-unused-cli
-      ${cmake_args} ${config_args}
+      -C "${cache_path}"
+      ${cmake_args}
   )
+
+  file(REMOVE "${cache_path}")
 
   ubpm_msg(STATUS "Building")
   set(build_log "$CACHE{UBPM_PATH}/build.log")
