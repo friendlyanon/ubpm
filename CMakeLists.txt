@@ -18,8 +18,8 @@ set(
     "Shebang for the installed utility script"
 )
 
-set(UBPM_DATAROOT "${CMAKE_INSTALL_DATADIR}/ubpm-${PROJECT_VERSION}/module")
-set(UBPM_LIBROOT "${CMAKE_INSTALL_LIBDIR}/cmake/ubpm-${PROJECT_VERSION}")
+set(UBPM_DATAROOT "${CMAKE_INSTALL_DATADIR}/ubpm/module")
+set(UBPM_LIBROOT "${CMAKE_INSTALL_LIBDIR}/cmake/ubpm")
 file(
     RELATIVE_PATH UBPM_BIN_MODULE_PATH
     "/${CMAKE_INSTALL_BINDIR}" "/${UBPM_DATAROOT}"
