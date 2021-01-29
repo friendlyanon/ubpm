@@ -33,7 +33,7 @@ ubpm_dependency(
     # the prefix location
     #
     # For each <comp> the following command is run:
-    # cmake --install <build-dir> --config <build-type> --prefix <install-dir> --component <comp>
+    # cmake --install <build-dir> --config <build-type> --component <comp>
     #
     # If omitted, then CMake will be run once without the component argument
 
