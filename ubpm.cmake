@@ -221,13 +221,26 @@ macro(ubpm_install_source_dir)
   ubpm_msg(STATUS "Building")
   set(build_log "$CACHE{UBPM_PATH}/build.log")
   file(REMOVE "${build_log}")
-  ubpm_cmake(
-      --build "${build_dir}"
-      --config "${_BUILD_TYPE}"
-      -j "$CACHE{UBPM_CORES}"
-      OUTPUT_FILE "${build_log}" ERROR_FILE "${build_log}"
-  )
-  file(REMOVE "${build_log}")
+  if("${_TARGETS}" STREQUAL "")
+    ubpm_cmake(
+        --build "${build_dir}"
+        --config "${_BUILD_TYPE}"
+        -j "$CACHE{UBPM_CORES}"
+        OUTPUT_FILE "${build_log}" ERROR_FILE "${build_log}"
+    )
+    file(REMOVE "${build_log}")
+  else()
+    foreach(target IN LISTS _TARGETS)
+      ubpm_cmake(
+          --build "${build_dir}"
+          --config "${_BUILD_TYPE}"
+          --target "${target}"
+          -j "$CACHE{UBPM_CORES}"
+          OUTPUT_FILE "${build_log}" ERROR_FILE "${build_log}"
+      )
+      file(REMOVE "${build_log}")
+    endforeach()
+  endif()
 
   ubpm_msg(STATUS "Installing")
   set(manifest "")
@@ -368,7 +381,7 @@ function(ubpm_dependency NAME)
   endif()
 
   set(oneValueArgs SOURCE_DIR URL URL_HASH BUILD_TYPE PATH SCRIPT_PATH)
-  set(multiValueArgs GITHUB GIT COMPONENTS)
+  set(multiValueArgs GITHUB GIT COMPONENTS TARGETS)
   cmake_parse_arguments(PARSE_ARGV 1 "" "OPTIONS" "${oneValueArgs}" "${multiValueArgs}")
 
   if(_OPTIONS)
@@ -469,6 +482,7 @@ function(ubpm_dependency NAME)
   set(
       install_hashable
       "${source_hash}"
+      "${_TARGETS}"
       "${_COMPONENTS}"
       "${_BUILD_TYPE}"
       "${_UNPARSED_ARGUMENTS}" # OPTIONS

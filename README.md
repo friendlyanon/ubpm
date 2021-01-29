@@ -37,6 +37,13 @@ ubpm_dependency(
     #
     # If omitted, then CMake will be run once without the component argument
 
+    [TARGETS <tgt>...]
+    # List of target names to build
+    #
+    # For each <tgt> the --target <tgt> argument is passed to the build command
+    #
+    # If omitted, then CMake will be run once without the target argument
+
     [SCRIPT_PATH <path>]
     # Path to a CMake script file that will be copied into the source directory
     # of the dependency
