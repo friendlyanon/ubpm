@@ -135,8 +135,8 @@ macro(ubpm_read_install_manifest)
 endmacro()
 
 macro(ubpm_add_cache var val)
-  string(REPLACE "\"" "\\\"" escaped "${val}")
-  string(APPEND cache_string "set(\"${var}\" \"${escaped}\" CACHE INTERNAL \"\")\n")
+  string(REGEX REPLACE "^\n" "\n\n" escaped "${val}")
+  string(APPEND cache_string "set(\"${var}\" [==[${escaped}]==] CACHE INTERNAL \"\")\n")
 endmacro()
 
 macro(ubpm_install_source_dir)
