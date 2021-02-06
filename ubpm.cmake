@@ -45,14 +45,20 @@ unset(ubpm_doc)
 
 mark_as_advanced(UBPM_PASSTHROUGH_CACHE UBPM_LOG_COLOR UBPM_USE_ANSI_COLOR)
 
-macro(ubpm_msg_color TYPE PREFIX MESSAGE)
-  string(ASCII 27 esc)
-  message(
-      "${TYPE}"
-      "${PREFIX}${esc}[$CACHE{UBPM_LOG_COLOR}m${MESSAGE}${esc}[0m"
-  )
-  unset(esc)
-endmacro()
+if(UBPM_USE_ANSI_COLOR)
+  macro(ubpm_msg_color TYPE PREFIX MESSAGE)
+    string(ASCII 27 esc)
+    message(
+        "${TYPE}"
+        "${PREFIX}${esc}[$CACHE{UBPM_LOG_COLOR}m${MESSAGE}${esc}[0m"
+    )
+    unset(esc)
+  endmacro()
+else()
+  macro(ubpm_msg_color TYPE PREFIX MESSAGE)
+    message("${TYPE}" "${PREFIX}${MESSAGE}")
+  endmacro()
+endif()
 
 if(DEFINED CACHE{CMAKE_BUILD_TYPE} AND NOT "$CACHE{UBPM_IS_DEPENDENCY}")
   ubpm_msg_color(
