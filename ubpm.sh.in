@@ -8,7 +8,7 @@ while [ -h "${SOURCE}" ]; do
 done
 DIR="$(cd -P "$(dirname "${SOURCE}")" >/dev/null 2>&1 && pwd)"
 
-MODULE_DIR="$(cd "${DIR}/@UBPM_BIN_MODULE_PATH@"; pwd -P)"
+MODULE_DIR="$(cd "${DIR}/@UBPM_BIN_MODULE_PATH@/module"; pwd -P)"
 MODULE_PATH="${MODULE_DIR}/ubpm.cmake"
 VERSION="@PROJECT_VERSION@"
 
