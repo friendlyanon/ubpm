@@ -176,7 +176,7 @@ macro(ubpm_install_source_dir)
 
   if(_SCRIPT_PATH)
     file(REMOVE "${source_dir}/CMakeLists.txt")
-    file(INSTALL "${_SCRIPT_PATH}" DESTINATION "${source_dir}" RENAME CMakeLists.txt MESSAGE_NEVER)
+    configure_file("${_SCRIPT_PATH}" "${source_dir}/CMakeLists.txt" COPYONLY)
   endif()
 
   set(cmake_args "")
